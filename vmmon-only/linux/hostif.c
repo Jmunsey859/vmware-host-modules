@@ -2338,16 +2338,24 @@ static long compat_copy_from_kernel_nofault(void *dst, VA src, size_t size)
    long ret;
 
    old_fs = get_fs();
+   pr_info("%s: set_fs(KERNEL_DS) called", __func__);
    set_fs(KERNEL_DS);
    ret = HostIF_CopyFromUser(dst, src, size);
    set_fs(old_fs);
+   pr_info("%s: set_fs(old_fs) called", __func__);
 
    return ret;
 }
 #else
 static long compat_copy_from_kernel_nofault(void *dst, VA src, size_t size)
 {
-   return copy_from_kernel_nofault(dst, (const void *)src, size);
+   long ret;
+
+   pr_info("%s: set_fs(KERNEL_DS) removed here", __func__);
+   ret = copy_from_kernel_nofault(dst, (const void *)src, size);
+   pr_info("%s: set_fs(old_fs) removed here", __func__);
+
+   return ret;
 }
 #endif
 
@@ -3265,6 +3273,7 @@ HostIFFastClockThread(void *unused)  // IN:
 
    allow_signal(SIGKILL);
 
+   pr_info("%s: set_fs(KERNEL_DS) removed here", __func__);
    while ((rate = linuxState.fastClockRate) > MIN_RATE) {
       if (kthread_should_stop()) {
          goto out;
@@ -3285,6 +3294,7 @@ HostIFFastClockThread(void *unused)  // IN:
    }
 
  out:
+   pr_info("%s: set_fs(oldFS) removed here", __func__);
    /*
     * Do not exit thread until we are told to do so.
     */
